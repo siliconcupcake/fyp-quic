@@ -46,6 +46,7 @@ static picoquic_alpn_list_t alpn_list[] = {
 
 static size_t nb_alpn_list = sizeof(alpn_list) / sizeof(picoquic_alpn_list_t);
 
+// Set all possible ALPN values to TLS context
 void picoquic_demo_client_set_alpn_list(void* tls_context)
 {
     int ret = 0;
@@ -62,6 +63,7 @@ void picoquic_demo_client_set_alpn_list(void* tls_context)
     }
 }
 
+// Get ALPN code from string value
 picoquic_alpn_enum picoquic_parse_alpn(char const* alpn)
 {
     picoquic_alpn_enum code = picoquic_alpn_undef;
@@ -78,6 +80,7 @@ picoquic_alpn_enum picoquic_parse_alpn(char const* alpn)
     return code;
 }
 
+// Get ALPN code from byte comparison
 picoquic_alpn_enum picoquic_parse_alpn_nz(char const* alpn, size_t len)
 {
     picoquic_alpn_enum code = picoquic_alpn_undef;
@@ -95,6 +98,7 @@ picoquic_alpn_enum picoquic_parse_alpn_nz(char const* alpn, size_t len)
     return code;
 }
 
+// Get picoquic ticket from code and set to connection
 void picoquic_demo_client_set_alpn_from_tickets(picoquic_cnx_t* cnx, picoquic_demo_callback_ctx_t* ctx, uint64_t current_time)
 {
     const char* sni = cnx->sni;
@@ -124,6 +128,7 @@ void picoquic_demo_client_set_alpn_from_tickets(picoquic_cnx_t* cnx, picoquic_de
  * Code common to H3 and H09 clients
  */
 
+// Get stream from context by id
 static picoquic_demo_client_stream_ctx_t* picoquic_demo_client_find_stream(
     picoquic_demo_callback_ctx_t* ctx, uint64_t stream_id)
 {
@@ -136,7 +141,8 @@ static picoquic_demo_client_stream_ctx_t* picoquic_demo_client_find_stream(
     return stream_ctx;
 }
 
-
+// Get buffer from context and fill it with data
+// If available data is more than space, only fill upto space
 int demo_client_prepare_to_send(void * context, size_t space, size_t echo_length, size_t * echo_sent, FILE * F)
 {
     int ret = 0;
@@ -196,7 +202,7 @@ int demo_client_prepare_to_send(void * context, size_t space, size_t echo_length
  * H3Zero client. This is a simple client that conforms to HTTP 3.0,
  * but the client implementation is barebone.
  */
-
+// Create a HTTP 3.0 Request stream and add it to buffer
 int h3zero_client_create_stream_request(
     uint8_t * buffer, size_t max_bytes, uint8_t const * path, size_t path_len, size_t post_size, const char * host, size_t * consumed)
 {
@@ -295,6 +301,7 @@ int h3zero_client_init(picoquic_cnx_t* cnx)
  * would simply be "GET /document.html\n\r\n\r".
  */
 
+// Create HTTP 0.9 request command/endpoint
 int h09_demo_client_prepare_stream_open_command(
     uint8_t * command, size_t max_size, uint8_t const* path, size_t path_len, size_t post_size, char const * host, size_t * consumed)
 {
@@ -349,6 +356,9 @@ int h09_demo_client_prepare_stream_open_command(
  * Unified procedures used for H3 and H09 clients
  */
 
+// Create new stream and add it to context
+// Generate output file for data if flag is set
+// Generate appropriate request format and send the request
 static int picoquic_demo_client_open_stream(picoquic_cnx_t* cnx,
     picoquic_demo_callback_ctx_t* ctx,
     uint64_t stream_id, char const* doc_name, char const* fname, size_t post_size, uint64_t nb_repeat)
@@ -436,6 +446,7 @@ static int picoquic_demo_client_open_stream(picoquic_cnx_t* cnx,
         /* Format the protocol specific request */
         switch (ctx->alpn) {
         case picoquic_alpn_http_3:
+            fprintf(stdout, "Sending HTTP 3.0 Stream Request\n");
             ret = h3zero_client_create_stream_request(
                 buffer, sizeof(buffer), path, path_len, post_size, cnx->sni, &request_length);
             break;
@@ -469,6 +480,7 @@ static int picoquic_demo_client_open_stream(picoquic_cnx_t* cnx,
     return ret;
 }
 
+// Close a stream in context
 static int picoquic_demo_client_close_stream(
     picoquic_demo_callback_ctx_t* ctx, picoquic_demo_client_stream_ctx_t* stream_ctx)
 {
@@ -486,6 +498,7 @@ static int picoquic_demo_client_close_stream(
     return ret;
 }
 
+// Open and start stream for each client request queued
 int picoquic_demo_client_start_streams(picoquic_cnx_t* cnx,
     picoquic_demo_callback_ctx_t* ctx, uint64_t fin_stream_id)
 {
@@ -530,6 +543,7 @@ int picoquic_demo_client_start_streams(picoquic_cnx_t* cnx,
     return ret;
 }
 
+// Callback for various events in the connection lifecycle
 int picoquic_demo_client_callback(picoquic_cnx_t* cnx,
     uint64_t stream_id, uint8_t* bytes, size_t length,
     picoquic_call_back_event_t fin_or_event, void* callback_ctx, void* v_stream_ctx)
@@ -723,6 +737,7 @@ int picoquic_demo_client_callback(picoquic_cnx_t* cnx,
     return ret;
 }
 
+// Assign config values to context
 int picoquic_demo_client_initialize_context(
     picoquic_demo_callback_ctx_t* ctx,
     picoquic_demo_stream_desc_t const * demo_stream,
@@ -740,7 +755,7 @@ int picoquic_demo_client_initialize_context(
     return 0;
 }
 
-
+// Remove stream from context
 static void picoquic_demo_client_delete_stream_context(picoquic_demo_callback_ctx_t* ctx,
     picoquic_demo_client_stream_ctx_t * stream_ctx)
 {
@@ -781,6 +796,7 @@ static void picoquic_demo_client_delete_stream_context(picoquic_demo_callback_ct
     free(stream_ctx);
 }
 
+// Remove all streams from context
 void picoquic_demo_client_delete_context(picoquic_demo_callback_ctx_t* ctx)
 {
     picoquic_demo_client_stream_ctx_t * stream_ctx;
@@ -962,7 +978,7 @@ char const * demo_client_parse_post_size(char const * text, uint64_t * post_size
     return text;
 }
 
-
+// Obtain description of stream from params
 char const * demo_client_parse_stream_desc(char const * text, uint64_t default_stream, uint64_t default_previous,
     picoquic_demo_stream_desc_t * desc)
 {
@@ -994,6 +1010,7 @@ char const * demo_client_parse_stream_desc(char const * text, uint64_t default_s
     return text;
 }
 
+// Remove queued requests from context
 void demo_client_delete_scenario_desc(size_t nb_streams, picoquic_demo_stream_desc_t * desc)
 {
     for (size_t i = 0; i < nb_streams; i++) {
@@ -1028,6 +1045,7 @@ size_t demo_client_parse_nb_stream(char const * text) {
     return n;
 }
 
+// Obtain scenario from client and create corresponding demo streams
 int demo_client_parse_scenario_desc(char const * text, size_t * nb_streams, picoquic_demo_stream_desc_t ** desc)
 {
     int ret = 0;

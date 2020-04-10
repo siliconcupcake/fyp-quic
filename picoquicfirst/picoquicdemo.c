@@ -159,6 +159,10 @@ int quic_server(const char* server_name, int server_port,
     memset(&picoquic_file_param, 0, sizeof(picohttp_server_parameters_t));
     picoquic_file_param.web_folder = web_folder;
 
+// ------------------------
+// SERVER SETUP STARTS HERE
+// ------------------------
+
     // picoquic_set_default_callback(test_ctx->qserver, server_callback_fn, server_param);
 
     /* Open a UDP socket */
@@ -177,6 +181,7 @@ int quic_server(const char* server_name, int server_port,
             printf("Could not create server context\n");
             ret = -1;
         } else {
+            // Sets callback to context to pick ALPN on receiving Client Hello
             picoquic_set_alpn_select_fn(qserver, picoquic_demo_server_callback_select_alpn);
             if (do_retry != 0) {
                 picoquic_set_cookie_mode(qserver, 1);
@@ -207,6 +212,10 @@ int quic_server(const char* server_name, int server_port,
             }
         }
     }
+
+// ----------------------
+// SERVER SETUP ENDS HERE
+// ----------------------
 
     /* Wait for packets */
     while (ret == 0 && (!just_once || !connection_done)) {
@@ -252,6 +261,7 @@ int quic_server(const char* server_name, int server_port,
             }
             loop_time = current_time;
 
+            // fprintf(stdout, "Starting Reply\n");
             do {
                 struct sockaddr_storage peer_addr;
                 struct sockaddr_storage local_addr;
@@ -262,15 +272,18 @@ int quic_server(const char* server_name, int server_port,
                     send_buffer, sizeof(send_buffer), &send_length,
                     &peer_addr, &local_addr, &if_index);
 
+                // fprintf(stdout, "Sending segment\n");
                 if (ret == 0 && send_length > 0) {
                     loop_count_time = current_time;
                     nb_loops = 0;
+                    // fprintf(stdout, "Server Sending packet\n");
                     (void)picoquic_send_through_server_sockets(&server_sockets,
                         (struct sockaddr*) & peer_addr, (struct sockaddr*) & local_addr, if_index,
                         (const char*)send_buffer, (int)send_length);
                 }
 
             } while (ret == 0 && send_length > 0);
+            // fprintf(stdout, "Ending Reply\n");
 
             if (just_once && first_connection_seen && picoquic_get_first_cnx(qserver) == NULL) {
                 fprintf(stdout, "No more active connections.\n");
@@ -596,6 +609,7 @@ int quic_client(const char* ip_address_text, int server_port,
             }
             
             if (ret == 0) {
+                // fprintf(stdout, "Sending Packet\n");
                 ret = picoquic_prepare_packet(cnx_client, current_time,
                     send_buffer, sizeof(send_buffer), &send_length, NULL, NULL);
 
@@ -826,6 +840,7 @@ int quic_client(const char* ip_address_text, int server_port,
 
                     current_time = picoquic_get_quic_time(qclient);
 
+                    // fprintf(stdout, "Sending Packet\n");
                     ret = picoquic_prepare_packet(cnx_client, current_time,
                         send_buffer, sizeof(send_buffer), &send_length, &x_to, &x_from);
 

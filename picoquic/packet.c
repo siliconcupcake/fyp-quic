@@ -1827,6 +1827,7 @@ int picoquic_incoming_segment(
             }
         }
         else {
+            // fprintf(stdout, "Received packet type: %d\n", ph.ptype);
             switch (ph.ptype) {
             case picoquic_packet_version_negotiation:
                 ret = picoquic_incoming_version_negotiation(

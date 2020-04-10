@@ -3500,6 +3500,7 @@ int picoquic_decode_frames(picoquic_cnx_t* cnx, picoquic_path_t * path_x, uint8_
 
         }
         else {
+            // fprintf(stdout, "Decoding frame type: %d\n", first_byte);
             switch (first_byte) {
             case picoquic_frame_type_padding:
                 bytes = picoquic_skip_0len_frame(bytes, bytes_max);

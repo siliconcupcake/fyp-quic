@@ -304,6 +304,7 @@ static int demo_server_parse_path(const uint8_t * path, size_t path_length, size
         ret = 0;
     }
     else if (path_length > 1 && (path_length != 11 || memcmp(path, "/index.html", 11) != 0)) {
+        fprintf(stdout, "Handling custom data size\n");
         uint32_t x = 0;
         for (size_t i = 1; i < path_length; i++) {
             if (path[i] < '0' || path[i] > '9') {
@@ -313,7 +314,7 @@ static int demo_server_parse_path(const uint8_t * path, size_t path_length, size
             x *= 10;
             x += path[i] - '0';
         }
-
+        fprintf(stdout, "Calculated Size: %d\n", x);
         if (ret == 0) {
             *echo_size = x;
         }
@@ -342,6 +343,8 @@ static int h3zero_server_process_request_frame(
     *o_bytes++ = h3zero_frame_header;
     o_bytes += 2; /* reserve two bytes for frame length */
 
+    fprintf(stdout, "Preparing HTTP 3.0 Response for type: %d\n", stream_ctx->ps.stream_state.header.method);
+    fprintf(stdout, "Path: %s\n", stream_ctx->ps.stream_state.header.path);
     if (stream_ctx->ps.stream_state.header.method != h3zero_method_get &&
         stream_ctx->ps.stream_state.header.method != h3zero_method_post) {
         /* No such method supported -- error 405, header include "allow GET. POST" */
@@ -350,6 +353,7 @@ static int h3zero_server_process_request_frame(
     else if (stream_ctx->ps.stream_state.header.method == h3zero_method_get &&
         demo_server_parse_path(stream_ctx->ps.stream_state.header.path, stream_ctx->ps.stream_state.header.path_length, &stream_ctx->echo_length, &stream_ctx->F, app_ctx->web_folder) != 0) {
         /* If unknown, 404 */
+        fprintf(stdout, "Cannot find requested file\n");
         o_bytes = h3zero_create_not_found_header_frame(o_bytes, o_bytes_max);
         /* TODO: consider known-url?data construct */
     }
@@ -373,8 +377,10 @@ static int h3zero_server_process_request_frame(
             stream_ctx->echo_length = 0;
         }
         else {
+            fprintf(stdout, "Echo Length: %zu\n", stream_ctx->echo_length);
             response_length = (stream_ctx->echo_length == 0) ?
                 strlen(demo_server_default_page) : stream_ctx->echo_length;
+            fprintf(stdout, "Response Length: %zu\n", response_length);
         }
         /* If known, create response header frame */
         /* POST-TODO: provide content type of response as part of context */

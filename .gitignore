@@ -20,7 +20,7 @@ Release
 */*.xbf
 */*.ilk
 *.b
-
+.vscode
 *.a
 *.bin
 CMakeCache.txt

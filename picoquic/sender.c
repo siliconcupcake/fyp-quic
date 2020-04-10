@@ -3375,6 +3375,7 @@ int picoquic_prepare_segment(picoquic_cnx_t* cnx, picoquic_path_t* path_x, picoq
     int ret = 0;
 
     if (ret == 0){
+        // fprintf(stdout, "Preparing Segment for State: %d\n", cnx->cnx_state);
         /* Prepare header -- depend on connection state */
         /* TODO: 0-RTT work. */
         switch (cnx->cnx_state) {
@@ -3645,6 +3646,7 @@ int picoquic_prepare_next_packet(picoquic_quic_t* quic,
     picoquic_stateless_packet_t* sp = picoquic_dequeue_stateless_packet(quic);
 
     if (sp != NULL) {
+        // fprintf(stdout, "Sending Stateless Packet\n");
         if (sp->length > send_buffer_max) {
             *send_length = 0;
         }
@@ -3658,6 +3660,7 @@ int picoquic_prepare_next_packet(picoquic_quic_t* quic,
         picoquic_delete_stateless_packet(sp);
     }
     else {
+        // fprintf(stdout, "Sending Statefull Packet\n");
         picoquic_cnx_t* cnx = picoquic_get_earliest_cnx_to_wake(quic, current_time);
 
         if (cnx == NULL) {
